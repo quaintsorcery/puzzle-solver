@@ -27,7 +27,7 @@ impl Node {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Deserialize, Serialize)]
 pub enum Data {
     Text(String),
     List(Vec<Data>),

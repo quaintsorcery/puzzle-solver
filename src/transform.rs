@@ -107,3 +107,174 @@ impl Transformer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_split() {
+        let transformer = Transformer::Split {
+            pattern: " ".into(),
+        };
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![
+                Data::Text("Sample Text".into()),
+                Data::Text("Another Sample Text".into()),
+            ]),
+            Data::List(vec![
+                Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+                Data::List(vec![
+                    Data::Text("Another".into()),
+                    Data::Text("Sample".into()),
+                    Data::Text("Text".into()),
+                ]),
+            ]),
+        );
+    }
+
+    #[test]
+    fn test_join() {
+        let transformer = Transformer::Join {
+            separator: " ".into(),
+        };
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+            Data::Text("Sample Text".into()),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![
+                Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+                Data::List(vec![
+                    Data::Text("Another".into()),
+                    Data::Text("Sample".into()),
+                    Data::Text("Text".into()),
+                ]),
+            ]),
+            Data::Text("Sample Text Another Sample Text".into()),
+        );
+    }
+
+    #[test]
+    fn test_find() {
+        let transformer = Transformer::Find {
+            pattern: "Text".into(),
+        };
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::List(vec![Data::Text("Text".into())]),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![
+                Data::Text("Sample Text".into()),
+                Data::Text("Another Sample Text".into()),
+            ]),
+            Data::List(vec![
+                Data::List(vec![Data::Text("Text".into())]),
+                Data::List(vec![Data::Text("Text".into())]),
+            ]),
+        );
+    }
+
+    #[test]
+    fn test_replace() {
+        let transformer = Transformer::Replace {
+            pattern: "Sample".into(),
+            replacer: "Test".into(),
+        };
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::Text("Test Text".into()),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![
+                Data::Text("Sample Text".into()),
+                Data::Text("Another Sample Text".into()),
+            ]),
+            Data::List(vec![
+                Data::Text("Test Text".into()),
+                Data::Text("Another Test Text".into()),
+            ]),
+        );
+    }
+
+    #[test]
+    fn test_slice() {
+        let transformer = Transformer::Slice { from: 1, to: 6 };
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::Text("ample".into()),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![
+                Data::Text("Sample Text".into()),
+                Data::Text("Another Sample Text".into()),
+            ]),
+            Data::List(vec![Data::Text("ample".into()), Data::Text("nothe".into())]),
+        );
+    }
+
+    // TODO: encode and decode tests
+
+    #[test]
+    fn test_uppercase() {
+        let transformer = Transformer::Uppercase;
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::Text("SAMPLE TEXT".into()),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+            Data::List(vec![Data::Text("SAMPLE".into()), Data::Text("TEXT".into())]),
+        );
+    }
+
+    #[test]
+    fn test_lowercase() {
+        let transformer = Transformer::Lowercase;
+
+        test_transformer(
+            &transformer,
+            Data::Text("Sample Text".into()),
+            Data::Text("sample text".into()),
+        );
+
+        test_transformer(
+            &transformer,
+            Data::List(vec![Data::Text("Sample".into()), Data::Text("Text".into())]),
+            Data::List(vec![Data::Text("sample".into()), Data::Text("text".into())]),
+        );
+    }
+
+    fn test_transformer(transformer: &Transformer, input: Data, expected_output: Data) {
+        assert_eq!(transformer.transform(&input), expected_output);
+    }
+}
